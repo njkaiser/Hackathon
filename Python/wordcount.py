@@ -45,26 +45,54 @@ import sys
 # and builds and returns a word/count dict for it.
 # Then print_words() and print_top() can just call the utility function.
 
-def print_words(filename):
+import operator
+import re
+import string
+
+def parse_words(filename):
   words = {}
 
   f = open(filename)
-  for i in range(0, 20):
-    for word in f.readline().split():
+  for line in f:
+    for word in line.split():
+      regex = re.compile('[%s]' % re.escape(string.punctuation))
+      word = regex.sub('', word)
+      word = word.lower()
       if not word in words:
         words[word] = 1
       else:
         words[word] += 1
 
-  for key,value in words.iteritems():
-    print key, '\t', '\t', value
-
-  print "#################", '\n', len(words)
-
-
   f.close()
+  return words
 
-###
+
+def print_words(filename):
+  words = parse_words(filename)
+  print "\nWord parsing complete.\n"
+
+  #for key,value in words.iteritems():
+    #print key, '\t', '\t', value
+
+
+def print_top(filename):
+  words = parse_words(filename)
+  words_sorted = sorted(words.items(), key=operator.itemgetter(1), reverse=True)
+  #words_sorted = sorted(parse_words(filename).items, key=operator.itemgetter(1))
+  ### why doesn't the above line work? it's just a combo of the 2 lines above it...
+  print "\nWord sorting complete. Top 20 most used words: \n"
+
+  counter = 0
+  for word in words_sorted:#sorted(words, key=word.get):
+    #print word, '\t', '\t', words_sorted[counter]
+    print word[0], '\t', '\t', word[1]
+    counter += 1
+    if counter == 20:
+      return
+
+#for w in sorted(d, key=d.get, reverse=True):
+  #print w, d[w]
+
 
 # This basic command line argument parsing code is provided and
 # calls the print_words() and print_top() functions which you must define.
