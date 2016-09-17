@@ -66,7 +66,7 @@ def plot_stuff(points, parents):
 # initial variables
 q_init = 50,50
 d_q = 1
-n_iterations = 250
+n_iterations = 500
 
 # initialize 100 X 100 state space grid, with middle element initialized to 1
 grid_size = 100
