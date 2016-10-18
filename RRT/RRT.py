@@ -1,7 +1,5 @@
-#!/bin/usr/env python
-
+#!/usr/bin/env python
 # http://robotics.mech.northwestern.edu/~jarvis/hackathon_2016_site/challenge_rrt.html
-
 import numpy
 import random
 import math
@@ -18,18 +16,8 @@ def buffer_world(world):
         for y in range(1, len(world[0])-1):
             if world[x][y] == 1:
                 for u in range(-1, 2):
-                    print u
                     for v in range(-1, 2):
                         buffered_world[x + u][y + v] = 1
-                # buffered_world[x-1][y+1] = 1
-                # buffered_world[x][y+1] = 1
-                # buffered_world[x+1][y+1] = 1
-                # buffered_world[x-1][y] = 1
-                # buffered_world[x][y] = 1
-                # buffered_world[x+1][y] = 1
-                # buffered_world[x-1][y-1] = 1
-                # buffered_world[x][y-1] = 1
-                # buffered_world[x+1][y-1] = 1
     return buffered_world
 
 
@@ -94,12 +82,11 @@ def Bresenham(start, end):
 def endpoint_collision_detect(new_point):
     x = new_point[0]
     y = new_point[1]
-    if x <= 1 or x >= 98:
+    if x <= 1 or x >= grid_size - 2:
         return True
-    if y <= 1 or y >= 98:
+    if y <= 1 or y >= grid_size - 2:
         return True
     if buffered_world[y][x]: # reminder: world coordinates are flipped
-    #if world[y][x]: # reminder: world coordinates are flipped
         return True
     else:
         return False
@@ -108,43 +95,32 @@ def endpoint_collision_detect(new_point):
 def calc_nearest_neighbor(new_point, points):
     min_dist = grid_size * 2
     min_dist_point_index = 0
-    counter = 0
-    for last_point in points:
-        #print last_point[0], last_point[1], new_point[0], new_point[1]
+    for counter, last_point in enumerate(points):
         dist = math.sqrt(math.pow(abs(new_point[0] - last_point[0]), 2) + math.pow(abs(new_point[1] - last_point[1]), 2))
-        #print dist
         if dist < min_dist:
             min_dist = dist
-            min_dist_point = points[counter]
             min_dist_point_index = counter
-        counter += 1
-    #print min_dist
     return min_dist_point_index, min_dist
 
 
 def line_collision_detection(new_point, nearest_point):
-    #nearest_point_index = calc_nearest_neighbor(new_point, points)
-    #nearest_point = points[nearest_point_index]
     line_pixels = Bresenham(new_point, nearest_point)
     for x, y in line_pixels:
         if buffered_world[y][x]: # reminder: world coordinates are flipped
-        #if world[y][x]: # reminder: world coordinates are flipped
             return True
     return False
 
 
 def generate_new_point(points, parents):
     while(1):
-        #x = random.randrange(0, grid_size-1)
-        x = int(numpy.random.rand() * 100)
-        #y = random.randrange(0, grid_size-1)
-        y = int(numpy.random.rand() * 100)
-        new_point = x,y
+        x = int(numpy.random.rand() * grid_size)
+        y = int(numpy.random.rand() * grid_size)
+        new_point = x, y
         if new_point in points:
-            #print "INFO: randomly generated point already exists, no point added"
+            # print "INFO: potential point already exists - point not created"
             continue
         if endpoint_collision_detect(new_point):
-            #print "INFO: new point collides with environment - point not created"
+            #print "INFO: potential point collides with environment - point not created"
             continue
 
         nearest_neighbor_index, nearest_neighbor_dist = calc_nearest_neighbor(new_point, points)
@@ -176,55 +152,51 @@ def plot_stuff(points, parents):
         codes.append(Path.MOVETO)
         codes.append(Path.LINETO)
         counter = counter + 1
+
     fig = plt.gcf()
     path = Path(plot_points, codes)
     patch = patches.PathPatch(path, color='b')
     ax = fig.add_subplot(111)
     ax.add_patch(patch)
-    ax.set_xlim([0,100])
-    ax.set_ylim([0,100])
+    ax.set_xlim([0,grid_size])
+    ax.set_ylim([0,grid_size])
 
     # plot the route from start to end in thick red line:
-    route_plot_points = []
-    route_plot_points.append(points[parents[0]])
-    route_codes = []
-    route_codes.append(Path.MOVETO)
-    for stuff in parents:
-        route_plot_points.append(points[stuff])
-        route_codes.append(Path.LINETO)
-    route_fig = plt.gcf()
-    route_path = Path(route_plot_points, route_codes)
-    route_patch = patches.PathPatch(route_path, lw=10, color='r')
-    route_ax = route_fig.add_subplot(111)
-    route_ax.add_patch(patch)
-    route_ax.set_xlim([0,100])
-    route_ax.set_ylim([0,100])
+    # route_plot_points = []
+    # route_plot_points.append(points[parents[0]])
+    # route_codes = []
+    # route_codes.append(Path.MOVETO)
+    # for stuff in parents:
+    #     route_plot_points.append(points[stuff])
+    #     route_codes.append(Path.LINETO)
+    # route_fig = plt.gcf()
+    # route_path = Path(route_plot_points, route_codes)
+    # route_patch = patches.PathPatch(route_path, lw=10, color='r')
+    # route_ax = route_fig.add_subplot(111)
+    # route_ax.add_patch(patch)
+    # route_ax.set_xlim([0,grid_size])
+    # route_ax.set_ylim([0,grid_size])
 
     return plot_points
 
 
-
-# initialize variables, 100 X 100 grid, initial elements
+# initialize variables, grid, and initial elements
 q_init = 40,40
 q_goal = 60,60
-max_iterations = 250
+max_iterations = 500
 grid_size = 100
 
 # set up 'N' logo in background
 world = imread("N_map.png")
 world = numpy.flipud(world)
 buffered_world = buffer_world(world)
-### why doesn't this flip work to fix my x y swap problem?
-# for x in range(0, len(world[0])):
-#     for y in range(0, len(world)):
-#         world[x][y] = world[y][x]
-### why doesn't this flip work to fix my x y swap problem?
 plt.imshow(world, cmap=plt.cm.binary, interpolation='nearest', origin='lower', extent=[0, world.shape[0], 0, world.shape[1]])
 
 # generate new random point (all interference checks done during point generation), then check if finished
 points = [q_init]
 parents = [0]
 iterations = 1
+valid_point = None
 for i in range(0, max_iterations):
     valid_point = generate_new_point(points, parents)
     if end_in_sight(valid_point):
@@ -233,7 +205,6 @@ for i in range(0, max_iterations):
         print "SOLUTION FOUND AFTER", iterations, "ITERATIONS"
         break
     iterations += 1
-# print "parent indices: ", parents
 
 # time to plot some stuff, using magic I don't yet know about
 plot_points = plot_stuff(points, parents)
